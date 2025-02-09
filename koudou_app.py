@@ -2,16 +2,17 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import rcParams  # 修正箇所
+import matplotlib  # 修正: モジュール全体を明示的にインポート
 import os
-import matplotlib.font_manager as fm  # 日本語フォントの設定に必要
+import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
 # ダウンロードしたフォントのパスを指定
 font_path = "./ipag.ttf"  # ダウンロードしたフォントファイル名
 
-# フォントファイルが存在するか確認
+# フォントファイルが存在するか確認して設定
 if os.path.exists(font_path):
-    matplotlib.rc('font', family=matplotlib.font_manager.FontProperties(fname=font_path).get_name())
+    font_prop = fm.FontProperties(fname=font_path)  # フォントプロパティを作成
+    matplotlib.rc('font', family=font_prop.get_name())  # 日本語フォントを適用
     print("日本語フォントが設定されました！")
 else:
     print("フォントファイルが見つかりません。パスを確認してください。")
@@ -32,8 +33,6 @@ st.markdown("""
 
 まず、以下のテンプレートをダウンロードし、データを入力してアップロードしてください。
 """)
-
-
 
 # CSVテンプレート
 template_csv = """Date（日付）,Behavior（行動）,Antecedent（きっかけ/先行事象）,Consequence（結果/後続事象）,Function（行動の機能）
@@ -88,7 +87,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
-            ax.set_title("前駆要因ごとの行動頻度")
+            ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
             st.pyplot(fig)
 
             # 結果ごとの頻度
@@ -98,7 +97,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(consequence_counts, annot=True, fmt="d", cmap="Oranges", ax=ax)
-            ax.set_title("結果ごとの行動頻度")
+            ax.set_title("結果ごとの行動頻度", fontproperties=font_prop)
             st.pyplot(fig)
 
             # 行動機能の割合
@@ -108,7 +107,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots()
             function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
-            ax.set_title("行動の機能の割合")
+            ax.set_title("行動の機能の割合", fontproperties=font_prop)
             ax.set_ylabel("")
             st.pyplot(fig)
 
