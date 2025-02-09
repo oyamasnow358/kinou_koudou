@@ -8,7 +8,18 @@ import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
 # ダウンロードしたフォントのパスを指定
 font_path = r"C:\Users\taka\OneDrive\デスクトップ\アプリ開発\機能的行動評価\kinou_koudou\ipag.ttf\ipaexg.ttf"
+font_prop = fm.FontProperties(fname=font_path)
   # 実際のパスに置き換えます
+
+# matplotlibでのフォント設定
+matplotlib.rcParams['font.family'] = font_prop.get_name()
+matplotlib.rcParams['axes.unicode_minus'] = False  # マイナス記号が文字化けしないように
+
+# グラフ描画時にfontpropertiesを指定
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
+st.pyplot(fig)
 
 # フォントファイルが存在するか確認して設定
 font_prop = None  # 初期化
