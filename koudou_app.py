@@ -7,13 +7,12 @@ import os
 import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
 # ダウンロードしたフォントのパスを指定
-font_path = r"C:\Users\taka\OneDrive\デスクトップ\アプリ開発\機能的行動評価\kinou_koudou\ipag.ttf\ipaexg.ttf"
+font_path = r"C:\Windows\Fonts\msgothic.ttc"
 font_prop = fm.FontProperties(fname=font_path)
   # 実際のパスに置き換えます
 
-# matplotlibでのフォント設定
-matplotlib.rcParams['font.family'] = font_prop.get_name()
-matplotlib.rcParams['axes.unicode_minus'] = False  # マイナス記号が文字化けしないように
+matplotlib.rcParams['font.family'] = 'IPAexGothic'  # または 'MS Gothic'
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 # グラフ描画時にfontpropertiesを指定
 fig, ax = plt.subplots(figsize=(10, 6))
