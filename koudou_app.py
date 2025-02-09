@@ -2,14 +2,12 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib import rcParams  # 修正箇所
 import os
 import matplotlib.font_manager as fm  # 日本語フォントの設定に必要
-from matplotlib import rcParams
 
-# 日本語フォントの設定
-rcParams['font.family'] = 'IPAexGothic'
 # ダウンロードしたフォントのパスを指定
-font_path = "C:\Users\taka\OneDrive\デスクトップ\アプリ開発\機能的行動評価\kinou_koudou/ipag.ttf"  # ダウンロードしたフォントファイル名
+font_path = "./ipag.ttf"  # ダウンロードしたフォントファイル名
 
 # フォントファイルが存在するか確認
 if os.path.exists(font_path):
