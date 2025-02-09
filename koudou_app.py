@@ -78,10 +78,18 @@ if uploaded_file is not None:
             ax.set_title("結果ごとの行動頻度", fontproperties=font_prop)
             st.pyplot(fig)
 
+            
+
             # 行動機能の割合（フォント修正）
             # グラフ描画
+            st.subheader("行動の機能の割合")
+            function_counts = df["行動の機能"].value_counts()  # "回数" を計算
+
             fig, ax = plt.subplots()
-            df.set_index("行動の機能")["回数"].plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
+            function_counts.plot.pie(
+                autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis"
+            )
+
 
 # ラベルのフォント適用
             for text in ax.texts:
