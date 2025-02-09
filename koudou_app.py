@@ -2,39 +2,31 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib
+import matplotlib.font_manager as fm
 import os
-import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
-# Streamlit Cloud 環境用のフォントパス
-font_path = "./ipaexg.ttf"  # ルートディレクトリにある場合
-
-# フォントファイルがあるかチェック
+# フォント設定
+font_path = "ipaexg.ttf"  # サーバーにアップロードしたフォントのパス
 if os.path.exists(font_path):
     font_prop = fm.FontProperties(fname=font_path)
-    matplotlib.rc('font', family=font_prop.get_name())  # フォントを適用
+    plt.rc('font', family=font_prop.get_name())
     st.write("✅ 日本語フォントが設定されました！")
 else:
-    st.error("❌ フォントファイルが見つかりません。サーバーに `ipaexg.ttf` をアップロードしてください。")
-
-# matplotlibのフォント設定
-matplotlib.rcParams['font.family'] = font_prop.get_name() if os.path.exists(font_path) else 'sans-serif'
-matplotlib.rcParams['axes.unicode_minus'] = False  # マイナス記号の文字化け防止
+    st.error("❌ フォントファイルが見つかりません。")
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
 
-st.markdown("""
-このアプリでは、FBA（機能的行動評価）のデータを基にした分析を行います。
-**FBA（Functional Behavior Assessment）**とは、行動の目的や理由を特定するための方法です。
-""")
-
-# CSVテンプレート
-template_csv = """Date（日付）,Behavior（行動）,Antecedent（きっかけ/先行事象）,Consequence（結果/後続事象）,Function（行動の機能）
-2025-02-01,Tantrum（かんしゃく）,Requested to stop playing（遊びをやめるように要求された）,Gained attention（注意を向けられた）,Gain Attention（注意を引く）
-2025-02-01,Run away（逃げ出す）,Given a task（課題を与えられた）,Ignored（無視された）,Escape（逃避）
+# CSVテンプレート（日本語のみ）
+template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,行動の機能
+2025-02-01,かんしゃく,遊びをやめるように要求された,注意を向けられた,注意を引く
+2025-02-01,逃げ出す,課題を与えられた,無視された,逃避
+2025-02-02,大声を出す,要求を拒否された,要求が通った,具体的なものを得る
+2025-02-03,叩く,宿題をするように求められた,休憩が与えられた,逃避
+2025-02-04,物を投げる,アイテムへのアクセスを拒否された,要求が通った,具体的なものを得る
 """
 
+# CSVテンプレートのダウンロード
 st.download_button(
     label="CSVテンプレートをダウンロード",
     data=template_csv.encode('utf-8-sig'),
@@ -48,25 +40,53 @@ uploaded_file = st.file_uploader("CSVファイルをアップロードしてく�
 if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-        st.subheader("アップロードされたデータ")
-        st.dataframe(df)
 
-        # 行動の頻度
-        st.subheader("行動の頻度")
-        behavior_counts = df["Behavior（行動）"].value_counts()
-        st.bar_chart(behavior_counts)
+        # 列名の確認
+        required_columns = ["日付", "行動", "きっかけ/先行事象", "結果/後続事象", "行動の機能"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
 
-        # 前駆要因ごとの頻度
-        st.subheader("前駆要因ごとの頻度")
-        antecedent_counts = df.groupby(["Antecedent（きっかけ/先行事象）", "Behavior（行動）"]).size().unstack(fill_value=0)
-        st.dataframe(antecedent_counts)
+        if missing_columns:
+            st.error(f"以下の列が不足しています: {', '.join(missing_columns)}")
+        else:
+            st.success("データが正常に読み込まれました！")
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
-        ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
-        st.pyplot(fig)
+            # 行動の頻度
+            st.subheader("行動の頻度")
+            behavior_counts = df["行動"].value_counts()
+            st.bar_chart(behavior_counts)
+
+            # きっかけごとの頻度
+            st.subheader("きっかけごとの頻度")
+            antecedent_counts = df.groupby(["きっかけ/先行事象", "行動"]).size().unstack(fill_value=0)
+            st.dataframe(antecedent_counts)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+            ax.set_title("きっかけごとの行動頻度", fontproperties=font_prop)
+            st.pyplot(fig)
+
+            # 結果ごとの頻度
+            st.subheader("結果ごとの頻度")
+            consequence_counts = df.groupby(["結果/後続事象", "行動"]).size().unstack(fill_value=0)
+            st.dataframe(consequence_counts)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(consequence_counts, annot=True, fmt="d", cmap="Oranges", ax=ax)
+            ax.set_title("結果ごとの行動頻度", fontproperties=font_prop)
+            st.pyplot(fig)
+
+            # 行動機能の割合（フォント修正）
+            st.subheader("行動機能の割合")
+            function_counts = df["行動の機能"].value_counts()
+            st.dataframe(function_counts)
+
+            fig, ax = plt.subplots()
+            function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis", labels=function_counts.index)
+            ax.set_title("行動の機能の割合", fontproperties=font_prop)
+            ax.set_ylabel("")
+            st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"データの読み込み中にエラーが発生しました: {e}")
+        st.error(f"データの処理中にエラーが発生しました: {e}")
 else:
     st.info("CSVファイルをアップロードしてください。")
