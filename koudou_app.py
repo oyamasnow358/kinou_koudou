@@ -8,14 +8,15 @@ import matplotlib as mpl
 
 
 # フォント設定
-font_path = os.path.abspath("ipaexg.ttf")  # 絶対パスに変更
+font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
 if os.path.exists(font_path):
     font_prop = fm.FontProperties(fname=font_path)
-    import matplotlib as mpl
-    mpl.rcParams['font.family'] = font_prop.get_name()  # 明示的に設定
+    mpl.rcParams["font.family"] = font_prop.get_name()
+    plt.rc("font", family=font_prop.get_name())  # 追加
     st.write(f"✅ フォント設定: {mpl.rcParams['font.family']}")
 else:
     st.error("❌ フォントファイルが見つかりません。")
+
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
@@ -65,13 +66,22 @@ if uploaded_file is not None:
 
             # きっかけごとの頻度
             st.subheader("きっかけごとの頻度")
-            antecedent_counts = df.groupby(["きっかけ/先行事象", "行動"]).size().unstack(fill_value=0)
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+
+            # 明示的にフォントを適用
             ax.set_title("きっかけごとの行動頻度", fontproperties=font_prop)
             ax.set_xlabel("行動", fontproperties=font_prop)
             ax.set_ylabel("きっかけ/先行事象", fontproperties=font_prop)
+
+            # 軸ラベルのフォント適用
+            for label in ax.get_xticklabels():
+                label.set_fontproperties(font_prop)
+            for label in ax.get_yticklabels():
+                label.set_fontproperties(font_prop)
+
             st.pyplot(fig)
+
 
             # 結果ごとの頻度
             st.subheader("結果ごとの頻度")
