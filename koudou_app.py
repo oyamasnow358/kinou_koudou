@@ -4,25 +4,34 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import rcParams
 
-# 日本語フォントの設定
+# 日本語フォントの設定（念のため残します）
 import matplotlib
-matplotlib.rc('font', family='IPAexGothic')  # 日本語フォントを指定
+matplotlib.rc('font', family='IPAexGothic')  # 日本語フォント（日本語表示の場合用）
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
 
 st.markdown("""
 このアプリでは、FBA（機能的行動評価）のデータを基にした分析を行います。
-まず、CSVテンプレートをダウンロードし、データを入力した後にアップロードしてください。
+**FBA（Functional Behavior Assessment）**とは、行動の目的や理由を特定するための方法です。  
+以下の項目を入力してデータを準備してください：
+
+- **Date（日付）**: 行動が発生した日付
+- **Behavior（行動）**: 発生した行動（例: 大声を出す、物を投げる）
+- **Antecedent（きっかけ/先行事象）**: 行動が起こる直前の状況や出来事
+- **Consequence（結果/後続事象）**: 行動が起きた後に続いた結果
+- **Function（行動の機能）**: 行動の目的（例: 注意を引く、逃避）
+
+まず、以下のテンプレートをダウンロードし、データを入力してアップロードしてください。
 """)
 
 # CSVテンプレート
-template_csv = """日付,行動,きっかけ（先行事象）,結果（後続事象）,行動の機能
-2025-02-01,かんしゃく,遊びをやめるように要求された,注意を向けられた,注意を引く
-2025-02-01,逃げ出す,課題を与えられた,無視された,逃避
-2025-02-02,大声を出す,要求を拒否された,要求が通った,具体的なものを得る
-2025-02-03,叩く,宿題をするように求められた,休憩が与えられた,逃避
-2025-02-04,物を投げる,アイテムへのアクセスを拒否された,要求が通った,具体的なものを得る
+template_csv = """Date（日付）,Behavior（行動）,Antecedent（きっかけ/先行事象）,Consequence（結果/後続事象）,Function（行動の機能）
+2025-02-01,Tantrum（かんしゃく）,Requested to stop playing（遊びをやめるように要求された）,Gained attention（注意を向けられた）,Gain Attention（注意を引く）
+2025-02-01,Run away（逃げ出す）,Given a task（課題を与えられた）,Ignored（無視された）,Escape（逃避）
+2025-02-02,Yelling（大声を出す）,Request denied（要求を拒否された）,Request granted（要求が通った）,Obtain Tangible（具体的なものを得る）
+2025-02-03,Hitting（叩く）,Asked to do homework（宿題をするように求められた）,Gave a break（休憩が与えられた）,Escape（逃避）
+2025-02-04,Throwing objects（物を投げる）,Denied access to item（アイテムへのアクセスを拒否された）,Request granted（要求が通った）,Obtain Tangible（具体的なものを得る）
 """
 
 # CSVテンプレートのダウンロード
@@ -49,7 +58,7 @@ if uploaded_file is not None:
         st.dataframe(df)
 
         # 列名の確認
-        required_columns = ["日付", "行動", "きっかけ（先行事象）", "結果（後続事象）", "行動の機能"]
+        required_columns = ["Date（日付）", "Behavior（行動）", "Antecedent（きっかけ/先行事象）", "Consequence（結果/後続事象）", "Function（行動の機能）"]
         missing_columns = [col for col in required_columns if col not in df.columns]
 
         if missing_columns:
@@ -59,12 +68,12 @@ if uploaded_file is not None:
 
             # 行動の頻度
             st.subheader("行動の頻度")
-            behavior_counts = df["行動"].value_counts()
+            behavior_counts = df["Behavior（行動）"].value_counts()
             st.bar_chart(behavior_counts)
 
             # 前駆要因ごとの頻度
             st.subheader("前駆要因ごとの頻度")
-            antecedent_counts = df.groupby(["きっかけ（先行事象）", "行動"]).size().unstack(fill_value=0)
+            antecedent_counts = df.groupby(["Antecedent（きっかけ/先行事象）", "Behavior（行動）"]).size().unstack(fill_value=0)
             st.dataframe(antecedent_counts)
 
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -74,7 +83,7 @@ if uploaded_file is not None:
 
             # 結果ごとの頻度
             st.subheader("結果ごとの頻度")
-            consequence_counts = df.groupby(["結果（後続事象）", "行動"]).size().unstack(fill_value=0)
+            consequence_counts = df.groupby(["Consequence（結果/後続事象）", "Behavior（行動）"]).size().unstack(fill_value=0)
             st.dataframe(consequence_counts)
 
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -84,7 +93,7 @@ if uploaded_file is not None:
 
             # 行動機能の割合
             st.subheader("行動機能の割合")
-            function_counts = df["行動の機能"].value_counts()
+            function_counts = df["Function（行動の機能）"].value_counts()
             st.dataframe(function_counts)
 
             fig, ax = plt.subplots()
