@@ -2,11 +2,23 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib import rcParams
+from matplotlib
+import rcParams
+import os
 
+# 利用可能なフォントの確認
+print(matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf'))
+
+# 日本語フォントの設定
+font_path = "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"  # 環境に応じてパスを変更
+if os.path.exists(font_path):
+    matplotlib.rc('font', family='IPAexGothic')  # フォントの設定
+else:
+    st.warning("日本語フォントが見つかりません。システムにフォントをインストールしてください。")
+# 日本語フォントの設定
+rcParams['font.family'] = 'IPAexGothic'
 # 日本語フォントの設定（念のため残します）
-import matplotlib
-matplotlib.rc('font', family='IPAexGothic')  # 日本語フォント（日本語表示の場合用）
+
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
