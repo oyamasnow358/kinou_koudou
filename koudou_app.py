@@ -7,7 +7,7 @@ import os
 import matplotlib.font_manager as fm  # 日本語フォントの設定に必要
 
 # ダウンロードしたフォントのパスを指定
-font_path = "./ipag.ttf"  # ダウンロードしたフォントファイル名
+font_path = "C:\Users\taka\OneDrive\デスクトップ\アプリ開発\機能的行動評価\kinou_koudou/ipag.ttf"  # ダウンロードしたフォントファイル名
 
 # フォントファイルが存在するか確認
 if os.path.exists(font_path):
