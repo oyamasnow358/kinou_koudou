@@ -2,23 +2,16 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib
-import rcParams
+from matplotlib import rcParams  # 修正箇所
 import os
-
-# 利用可能なフォントの確認
-print(matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf'))
+import matplotlib.font_manager as fm  # 日本語フォントの設定に必要
 
 # 日本語フォントの設定
 font_path = "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"  # 環境に応じてパスを変更
 if os.path.exists(font_path):
-    matplotlib.rc('font', family='IPAexGothic')  # フォントの設定
+    rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
 else:
     st.warning("日本語フォントが見つかりません。システムにフォントをインストールしてください。")
-# 日本語フォントの設定
-rcParams['font.family'] = 'IPAexGothic'
-# 日本語フォントの設定（念のため残します）
-
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
@@ -36,6 +29,8 @@ st.markdown("""
 
 まず、以下のテンプレートをダウンロードし、データを入力してアップロードしてください。
 """)
+
+
 
 # CSVテンプレート
 template_csv = """Date（日付）,Behavior（行動）,Antecedent（きっかけ/先行事象）,Consequence（結果/後続事象）,Function（行動の機能）
