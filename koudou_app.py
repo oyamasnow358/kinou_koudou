@@ -6,12 +6,15 @@ from matplotlib import rcParams  # 修正箇所
 import os
 import matplotlib.font_manager as fm  # 日本語フォントの設定に必要
 
-# 日本語フォントの設定
-font_path = "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"  # 環境に応じてパスを変更
+# ダウンロードしたフォントのパスを指定
+font_path = "./ipag.ttf"  # ダウンロードしたフォントファイル名
+
+# フォントファイルが存在するか確認
 if os.path.exists(font_path):
-    rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+    matplotlib.rc('font', family=matplotlib.font_manager.FontProperties(fname=font_path).get_name())
+    print("日本語フォントが設定されました！")
 else:
-    st.warning("日本語フォントが見つかりません。システムにフォントをインストールしてください。")
+    print("フォントファイルが見つかりません。パスを確認してください。")
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
