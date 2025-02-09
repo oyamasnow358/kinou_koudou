@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.font_manager as fm
 import os
+import matplotlib as mpl
+mpl.rcParams['font.family'] = font_prop.get_name()
 
 # フォント設定
-font_path = "ipaexg.ttf"  # サーバーにアップロードしたフォントのパス
+font_path = os.path.abspath("ipaexg.ttf")  # 絶対パスに変更
 if os.path.exists(font_path):
     font_prop = fm.FontProperties(fname=font_path)
-    plt.rc('font', family=font_prop.get_name())
-    st.write("✅ 日本語フォントが設定されました！")
+    import matplotlib as mpl
+    mpl.rcParams['font.family'] = font_prop.get_name()  # 明示的に設定
+    st.write(f"✅ フォント設定: {mpl.rcParams['font.family']}")
 else:
     st.error("❌ フォントファイルが見つかりません。")
 
@@ -76,12 +79,14 @@ if uploaded_file is not None:
             st.pyplot(fig)
 
             # 行動機能の割合（フォント修正）
-            st.subheader("行動機能の割合")
-            function_counts = df["行動の機能"].value_counts()
-            st.dataframe(function_counts)
-
+            # グラフ描画
             fig, ax = plt.subplots()
-            function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis", labels=function_counts.index)
+            df.set_index("行動の機能")["回数"].plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
+
+# ラベルのフォント適用
+            for text in ax.texts:
+                text.set_fontproperties(font_prop)
+
             ax.set_title("行動の機能の割合", fontproperties=font_prop)
             ax.set_ylabel("")
             st.pyplot(fig)
