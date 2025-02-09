@@ -56,45 +56,40 @@ if uploaded_file is not None:
             # 行動の頻度
             st.subheader("行動の頻度")
             behavior_counts = df["行動"].value_counts()
-            st.bar_chart(behavior_counts)
+            fig, ax = plt.subplots()
+            behavior_counts.plot(kind="bar", ax=ax)
+            ax.set_title("行動の頻度", fontproperties=font_prop)
+            ax.set_xlabel("行動", fontproperties=font_prop)
+            ax.set_ylabel("回数", fontproperties=font_prop)
+            st.pyplot(fig)
 
             # きっかけごとの頻度
             st.subheader("きっかけごとの頻度")
             antecedent_counts = df.groupby(["きっかけ/先行事象", "行動"]).size().unstack(fill_value=0)
-            st.dataframe(antecedent_counts)
-
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
             ax.set_title("きっかけごとの行動頻度", fontproperties=font_prop)
+            ax.set_xlabel("行動", fontproperties=font_prop)
+            ax.set_ylabel("きっかけ/先行事象", fontproperties=font_prop)
             st.pyplot(fig)
 
             # 結果ごとの頻度
             st.subheader("結果ごとの頻度")
             consequence_counts = df.groupby(["結果/後続事象", "行動"]).size().unstack(fill_value=0)
-            st.dataframe(consequence_counts)
-
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(consequence_counts, annot=True, fmt="d", cmap="Oranges", ax=ax)
             ax.set_title("結果ごとの行動頻度", fontproperties=font_prop)
+            ax.set_xlabel("行動", fontproperties=font_prop)
+            ax.set_ylabel("結果/後続事象", fontproperties=font_prop)
             st.pyplot(fig)
 
-            
-
-            # 行動機能の割合（フォント修正）
-            # グラフ描画
+            # 行動機能の割合
             st.subheader("行動の機能の割合")
-            function_counts = df["行動の機能"].value_counts()  # "回数" を計算
-
+            function_counts = df["行動の機能"].value_counts()
             fig, ax = plt.subplots()
-            function_counts.plot.pie(
-                autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis"
-            )
-
-
-# ラベルのフォント適用
+            function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
             for text in ax.texts:
                 text.set_fontproperties(font_prop)
-
             ax.set_title("行動の機能の割合", fontproperties=font_prop)
             ax.set_ylabel("")
             st.pyplot(fig)
