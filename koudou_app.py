@@ -6,7 +6,6 @@ import matplotlib.font_manager as fm
 import os
 import matplotlib as mpl
 
-
 # フォント設定
 font_path = os.path.abspath("ipaexg.ttf")  # 絶対パス
 if os.path.exists(font_path):
@@ -16,7 +15,6 @@ if os.path.exists(font_path):
     st.write(f"✅ フォント設定: {mpl.rcParams['font.family']}")
 else:
     st.error("❌ フォントファイルが見つかりません。")
-
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
@@ -62,41 +60,44 @@ if uploaded_file is not None:
             ax.set_title("行動の頻度", fontproperties=font_prop)
             ax.set_xlabel("行動", fontproperties=font_prop)
             ax.set_ylabel("回数", fontproperties=font_prop)
+
+            # 軸ラベルのフォント適用
+            ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop)
+            ax.set_yticklabels(ax.get_yticklabels(), fontproperties=font_prop)
+
             st.pyplot(fig)
 
-            # きっかけごとの頻度（`antecedent_counts` を定義）
-        if "きっかけ/先行事象" in df.columns and "行動" in df.columns:
+            # きっかけごとの頻度
+            st.subheader("きっかけごとの頻度")
             antecedent_counts = df.pivot_table(index="きっかけ/先行事象", columns="行動", aggfunc="size", fill_value=0)
 
-            st.subheader("きっかけごとの頻度")
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
 
-    # 明示的にフォントを適用
             ax.set_title("きっかけごとの行動頻度", fontproperties=font_prop)
             ax.set_xlabel("行動", fontproperties=font_prop)
             ax.set_ylabel("きっかけ/先行事象", fontproperties=font_prop)
 
-    # 軸ラベルのフォント適用
-            for label in ax.get_xticklabels():
-                label.set_fontproperties(font_prop)
-            for label in ax.get_yticklabels():
-                label.set_fontproperties(font_prop)
+            # 軸ラベルのフォント適用
+            ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop)
+            ax.set_yticklabels(ax.get_yticklabels(), fontproperties=font_prop)
 
             st.pyplot(fig)
-        else:
-            st.error("❌ 'きっかけ/先行事象' または '行動' のデータが不足しています。")
-
-
 
             # 結果ごとの頻度
             st.subheader("結果ごとの頻度")
             consequence_counts = df.groupby(["結果/後続事象", "行動"]).size().unstack(fill_value=0)
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(consequence_counts, annot=True, fmt="d", cmap="Oranges", ax=ax)
+
             ax.set_title("結果ごとの行動頻度", fontproperties=font_prop)
             ax.set_xlabel("行動", fontproperties=font_prop)
             ax.set_ylabel("結果/後続事象", fontproperties=font_prop)
+
+            # 軸ラベルのフォント適用
+            ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop)
+            ax.set_yticklabels(ax.get_yticklabels(), fontproperties=font_prop)
+
             st.pyplot(fig)
 
             # 行動機能の割合
@@ -104,10 +105,14 @@ if uploaded_file is not None:
             function_counts = df["行動の機能"].value_counts()
             fig, ax = plt.subplots()
             function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
+
+            # フォント適用
             for text in ax.texts:
                 text.set_fontproperties(font_prop)
+
             ax.set_title("行動の機能の割合", fontproperties=font_prop)
             ax.set_ylabel("")
+
             st.pyplot(fig)
 
     except Exception as e:
