@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib.font_manager as fm
 import os
 import matplotlib as mpl
-mpl.rcParams['font.family'] = font_prop.get_name()
+
 
 # フォント設定
 font_path = os.path.abspath("ipaexg.ttf")  # 絶対パスに変更
