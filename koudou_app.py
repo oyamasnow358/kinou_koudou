@@ -7,27 +7,25 @@ import os
 import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
 # ダウンロードしたフォントのパスを指定
-font_path = r"C:\Windows\Fonts\msgothic.ttc"
+font_path = r"C:\Users\taka\OneDrive\デスクトップ\アプリ開発\機能的行動評価\kinou_koudou\ipag.ttf\ipaexg.ttf"
 font_prop = fm.FontProperties(fname=font_path)
   # 実際のパスに置き換えます
-
-matplotlib.rcParams['font.family'] = 'IPAexGothic'  # または 'MS Gothic'
-matplotlib.rcParams['axes.unicode_minus'] = False
-
-# 前駆要因ごとの頻度
-st.subheader("前駆要因ごとの頻度")
-antecedent_counts = df.groupby(["Antecedent（きっかけ/先行事象）", "Behavior（行動）"]).size().unstack(fill_value=0)
-
-# データが空でないか確認
-if not antecedent_counts.empty:
-    st.dataframe(antecedent_counts)
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
-    ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
-    st.pyplot(fig)
+if os.path.exists(font_path):
+    font_prop = fm.FontProperties(fname=font_path)
+    matplotlib.rc('font', family=font_prop.get_name())  # 明示的に適用
+    st.write("✅ 日本語フォントが設定されました！")
 else:
-    st.warning("前駆要因ごとのデータがありません。")
+    st.error("❌ フォントファイルが見つかりません。パスを確認してください。")
+
+# matplotlibでのフォント設定
+matplotlib.rcParams['font.family'] = font_prop.get_name()
+matplotlib.rcParams['axes.unicode_minus'] = False  # マイナス記号が文字化けしないように
+
+# グラフ描画時にfontpropertiesを指定
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
+st.pyplot(fig)
 
 # フォントファイルが存在するか確認して設定
 font_prop = None  # 初期化
