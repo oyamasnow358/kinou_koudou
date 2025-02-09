@@ -7,7 +7,7 @@ import os
 import matplotlib.font_manager as fm  # 日本語フォント設定に必要
 
 # Streamlit Cloud 環境用のフォントパス
-font_path = "/app/ipaexg.ttf"
+font_path = "./ipaexg.ttf"  # ルートディレクトリにある場合
 
 # フォントファイルがあるかチェック
 if os.path.exists(font_path):
