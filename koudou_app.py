@@ -14,11 +14,20 @@ font_prop = fm.FontProperties(fname=font_path)
 matplotlib.rcParams['font.family'] = 'IPAexGothic'  # または 'MS Gothic'
 matplotlib.rcParams['axes.unicode_minus'] = False
 
-# グラフ描画時にfontpropertiesを指定
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
-ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
-st.pyplot(fig)
+# 前駆要因ごとの頻度
+st.subheader("前駆要因ごとの頻度")
+antecedent_counts = df.groupby(["Antecedent（きっかけ/先行事象）", "Behavior（行動）"]).size().unstack(fill_value=0)
+
+# データが空でないか確認
+if not antecedent_counts.empty:
+    st.dataframe(antecedent_counts)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+    ax.set_title("前駆要因ごとの行動頻度", fontproperties=font_prop)
+    st.pyplot(fig)
+else:
+    st.warning("前駆要因ごとのデータがありません。")
 
 # フォントファイルが存在するか確認して設定
 font_prop = None  # 初期化
