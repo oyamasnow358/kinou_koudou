@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib import rcParams
+
+# 日本語フォントの設定
+import matplotlib
+matplotlib.rc('font', family='IPAexGothic')  # 日本語フォントを指定
 
 # アプリタイトル
 st.title("FBA（機能的行動評価）分析アプリ")
@@ -64,6 +69,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
+            ax.set_title("前駆要因ごとの行動頻度")
             st.pyplot(fig)
 
             # 結果ごとの頻度
@@ -73,6 +79,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(consequence_counts, annot=True, fmt="d", cmap="Oranges", ax=ax)
+            ax.set_title("結果ごとの行動頻度")
             st.pyplot(fig)
 
             # 行動機能の割合
@@ -82,6 +89,7 @@ if uploaded_file is not None:
 
             fig, ax = plt.subplots()
             function_counts.plot.pie(autopct="%1.1f%%", ax=ax, startangle=90, cmap="viridis")
+            ax.set_title("行動の機能の割合")
             ax.set_ylabel("")
             st.pyplot(fig)
 
