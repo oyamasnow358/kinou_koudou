@@ -64,23 +64,29 @@ if uploaded_file is not None:
             ax.set_ylabel("回数", fontproperties=font_prop)
             st.pyplot(fig)
 
-            # きっかけごとの頻度
+            # きっかけごとの頻度（`antecedent_counts` を定義）
+        if "きっかけ/先行事象" in df.columns and "行動" in df.columns:
+            antecedent_counts = df.pivot_table(index="きっかけ/先行事象", columns="行動", aggfunc="size", fill_value=0)
+
             st.subheader("きっかけごとの頻度")
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(antecedent_counts, annot=True, fmt="d", cmap="Blues", ax=ax)
 
-            # 明示的にフォントを適用
+    # 明示的にフォントを適用
             ax.set_title("きっかけごとの行動頻度", fontproperties=font_prop)
             ax.set_xlabel("行動", fontproperties=font_prop)
             ax.set_ylabel("きっかけ/先行事象", fontproperties=font_prop)
 
-            # 軸ラベルのフォント適用
+    # 軸ラベルのフォント適用
             for label in ax.get_xticklabels():
                 label.set_fontproperties(font_prop)
             for label in ax.get_yticklabels():
                 label.set_fontproperties(font_prop)
 
             st.pyplot(fig)
+        else:
+            st.error("❌ 'きっかけ/先行事象' または '行動' のデータが不足しています。")
+
 
 
             # 結果ごとの頻度
