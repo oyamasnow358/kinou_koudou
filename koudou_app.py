@@ -5,41 +5,31 @@ import plotly.graph_objects as go
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="FBA 行動分析アプリ (データ増量版)",
+    page_title="FBA 行動分析アプリ (高画質版)",
     page_icon="🧩",
     layout="wide",
 )
 
-# --- CSSスタイル（カードデザインの強化） ---
+# --- CSSスタイル ---
 st.markdown("""
 <style>
     .big-font { font-size:22px !important; font-weight:bold; }
-    /* 獲得（正の強化）用のスタイル */
     .get-box {
-        background-color: #e6f9ff; /* 薄い青 */
-        border: 2px solid #00aaff;
-        border-radius: 15px;
-        padding: 20px;
-        color: #004d73;
+        background-color: #e6f9ff; border: 2px solid #00aaff;
+        border-radius: 15px; padding: 20px; color: #004d73;
     }
-    /* 回避（負の強化）用のスタイル */
     .escape-box {
-        background-color: #fff5e6; /* 薄いオレンジ */
-        border: 2px solid #ff9900;
-        border-radius: 15px;
-        padding: 20px;
-        color: #804d00;
+        background-color: #fff5e6; border: 2px solid #ff9900;
+        border-radius: 15px; padding: 20px; color: #804d00;
     }
     .legend-box {
-        padding: 8px; border-radius: 5px; text-align: center; color: white; font-weight: bold; font-size: 14px;
+        padding: 8px; border-radius: 5px; text-align: center; 
+        color: white; font-weight: bold; font-size: 15px; /* 文字サイズUP */
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- テンプレートデータ（30件以上に増量し、傾向を明確化） ---
-# パターンA: かんしゃく → ゲーム延長・お菓子GET（獲得＋）
-# パターンB: 離席 → 課題からの逃避（回避－）
-# パターンC: 大声 → 先生の注目（獲得＋）
+# --- テンプレートデータ（30件） ---
 template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,行動の機能
 2025-02-01,かんしゃく,ゲームを終わりにするよう言われた,ゲーム時間が延長された,要求・物品獲得
 2025-02-01,離席,算数プリントが配られた,廊下に出されて課題を免れた,逃避・回避
@@ -74,22 +64,21 @@ template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,�
 
 # --- メインタイトル ---
 st.title("🧩 行動の「理由」が見える FBA分析アプリ")
-st.write("「なぜその行動をするのか？」を、**何かを得たい（＋）**のか、**何かから逃れたい（－）**のかに分けて分析します。")
+st.write("文字をくっきり表示し、見やすさを向上させたバージョンです。")
 
 # --- サイドバー ---
 with st.sidebar:
     st.header("📂 データ入力")
     st.download_button(
-        label="📄 豊富なサンプルデータをDL",
+        label="📄 サンプルデータをDL",
         data=template_csv.encode('utf-8-sig'),
         file_name="fba_sample_large.csv",
-        mime="text/csv",
-        help="約30件のデータが入っており、分析結果が綺麗に表示されます。"
+        mime="text/csv"
     )
     uploaded_file = st.file_uploader("CSVをアップロード", type="csv")
 
 if uploaded_file is None:
-    st.info("👈 左側のメニューからCSVファイルをアップロードしてください（サンプルDL推奨）。")
+    st.info("👈 左側のメニューからCSVファイルをアップロードしてください。")
     st.stop()
 
 # --- データ読み込み ---
@@ -108,37 +97,33 @@ except Exception as e:
 st.markdown("---")
 col_sel, col_empty = st.columns([1, 2])
 with col_sel:
-    # データが多い順に行動をソートして表示
     behavior_counts = df['行動'].value_counts()
     target_behavior = st.selectbox("🔍 分析する行動を選択", behavior_counts.index)
 
 df_target = df[df['行動'] == target_behavior].copy()
 if df_target.empty: st.stop()
 
-# --- 自動判定ロジック（ここが核） ---
+# --- 自動判定ロジック ---
 top_func = df_target['行動の機能'].mode()[0]
 top_ante = df_target['きっかけ/先行事象'].mode()[0]
-
-# 機能の分類ロジック
 reinforcement_type = "unknown"
 if top_func in ["要求・物品獲得", "注目要求", "感覚刺激"]:
     reinforcement_type = "positive"
 elif top_func in ["逃避・回避"]:
     reinforcement_type = "negative"
 
-# --- 1. 結果の分かりやすい表示（カード形式） ---
+# --- 1. 結果表示（カード形式） ---
 st.subheader("💡 分析結果：行動のエンジンは何？")
 
 if reinforcement_type == "positive":
     st.markdown(f"""
     <div class="get-box">
         <div class="big-font">➕ 「獲得（ゲット）」タイプ（正の強化）</div>
-        <p>この行動は、<b>「何か良いこと（メリット）」がプラスされる</b>から繰り返されています。</p>
+        <p>行動することで<b>「良いこと」がプラス</b>されています。</p>
         <hr style="border-top: 1px dashed #00aaff;">
-        <ul>
-            <li><b>よくあるきっかけ:</b> {top_ante}</li>
-            <li><b>一番の目的:</b> {top_func}</li>
-            <li><b>解説:</b> 本人にとって「欲しいものが手に入る」「かまってもらえる」という結果がご褒美になっています。</li>
+        <ul style="font-size:18px;"> <!-- 文字サイズUP -->
+            <li><b>きっかけ:</b> {top_ante}</li>
+            <li><b>目的:</b> {top_func}</li>
         </ul>
         <div style="font-size:40px; text-align:center;">🎁 🙌 👀</div>
     </div>
@@ -148,26 +133,20 @@ elif reinforcement_type == "negative":
     st.markdown(f"""
     <div class="escape-box">
         <div class="big-font">➖ 「回避（逃げ）」タイプ（負の強化）</div>
-        <p>この行動は、<b>「嫌なこと（デメリット）」がマイナスされる</b>から繰り返されています。</p>
+        <p>行動することで<b>「嫌なこと」がマイナス</b>されています。</p>
         <hr style="border-top: 1px dashed #ff9900;">
-        <ul>
-            <li><b>よくあるきっかけ:</b> {top_ante}</li>
-            <li><b>一番の目的:</b> {top_func}</li>
-            <li><b>解説:</b> 本人にとって「嫌なことが終わる」「やらなくて済む」という結果がご褒美になっています。</li>
+        <ul style="font-size:18px;"> <!-- 文字サイズUP -->
+            <li><b>きっかけ:</b> {top_ante}</li>
+            <li><b>目的:</b> {top_func}</li>
         </ul>
         <div style="font-size:40px; text-align:center;">🏃💨 🚫 🔚</div>
     </div>
     """, unsafe_allow_html=True)
 
-else:
-    st.warning("機能が特定できませんでした。データを確認してください。")
-
-# --- 2. 視覚的フロー（サンキー図） ---
+# --- 2. 視覚的フロー（サンキー図）くっきり版 ---
 st.markdown("---")
 st.subheader("🌊 行動の流れ（A ➡ B ➡ C）")
-st.caption("左から右へ、どのような流れで行動が起き、どう終わったかを表示します。太い線ほど多いパターンです。")
 
-# 凡例
 st.markdown("""
 <div style="display:flex; gap:10px; margin-bottom:10px;">
     <div class="legend-box" style="background-color:#1f77b4; width:30%;">A: きっかけ (青)</div>
@@ -204,7 +183,7 @@ for _, row in df_ab.iterrows():
     source.append(ante_map[row['きっかけ/先行事象']])
     target.append(beh_map[row['行動']])
     values.append(row['value'])
-    link_colors.append("rgba(31, 119, 180, 0.4)") # 少し濃くしました
+    link_colors.append("rgba(31, 119, 180, 0.4)")
 
 # B->C
 df_bc = sankey_counts.groupby(['行動', '結果/後続事象'])['value'].sum().reset_index()
@@ -212,52 +191,64 @@ for _, row in df_bc.iterrows():
     source.append(beh_map[row['行動']])
     target.append(cons_map[row['結果/後続事象']])
     values.append(row['value'])
-    link_colors.append("rgba(255, 127, 14, 0.4)") # 少し濃くしました
+    link_colors.append("rgba(255, 127, 14, 0.4)")
 
 fig_sankey = go.Figure(data=[go.Sankey(
-    node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5), label=labels, color=node_colors),
+    node=dict(
+        pad=20,
+        thickness=25,
+        line=dict(color="black", width=0.5),
+        label=labels,
+        color=node_colors,
+        # ★★★ 文字くっきり設定 ★★★
+        # サイズを大きく(16px)、太字(Bold)に、色は真っ黒(black)
+        textfont=dict(size=16, color="black", family="Arial Black"),
+    ),
     link=dict(source=source, target=target, value=values, color=link_colors)
 )])
-fig_sankey.update_layout(height=500, margin=dict(l=10, r=10, t=10, b=10))
+
+# 図全体のレイアウト設定（文字を大きく、余白を調整）
+fig_sankey.update_layout(
+    height=600, # 高さを増やして文字の重なりを防ぐ
+    font=dict(size=16, family="Arial"), # 全体の基本フォントサイズUP
+    margin=dict(l=20, r=20, t=40, b=40)
+)
 st.plotly_chart(fig_sankey, use_container_width=True)
 
-# --- 3. 対応策の提案（タイプ別） ---
+# --- 3. 対応策 ---
 st.markdown("---")
-st.subheader("💡 どう対応すればいい？")
+st.subheader("💡 対応アプローチ")
 
+# フォントサイズを調整したCSS適用済みメッセージを表示
 if reinforcement_type == "positive":
     st.info(f"""
-    **【➕ 獲得タイプ（正の強化）へのアプローチ】**
+    ##### 【➕ 獲得タイプ（正の強化）】
+    **「{target_behavior}」以外の方法で「欲しいもの（{top_func}）」を手に入れる練習をしましょう。**
     
-    「{target_behavior}」をしなくても、**もっと適切な方法で「欲しいもの（{top_func}）」が手に入る**ことを教えましょう。
-    
-    1.  **「ちょうだい」「見て」を教える:** 言葉やカードで要求できたら、すぐに叶えてあげます。
-    2.  **先回りして与える:** 問題行動が起きる前に、十分に注目したり、好きなものを渡したりしておきます。
-    3.  **問題行動には反応しない:** 安全な範囲で、泣いたり暴れたりしても「要求は通らない」ことを一貫して示します。
+    1.  **要求スキル:** 「ちょうだい」「見て」と言葉やカードで伝える練習をする。
+    2.  **先回り:** かんしゃくが起きる前に、適切なタイミングで注目したり物を渡したりする。
     """)
 elif reinforcement_type == "negative":
     st.warning(f"""
-    **【➖ 回避タイプ（負の強化）へのアプローチ】**
+    ##### 【➖ 回避タイプ（負の強化）】
+    **「{target_behavior}」以外の方法で「嫌な状況」を変える練習をしましょう。**
     
-    「{target_behavior}」をしなくても、**もっと適切な方法で「嫌な状況」を変えられる**ことを教えましょう。
-    
-    1.  **「手伝って」「休憩」を教える:** 適切なSOSが出せたら、すぐに課題を中断したり手伝ったりします。
-    2.  **課題の調整:** 「{top_ante}」が難しすぎたり、長すぎたりしませんか？ 本人が「これならできる」と思えるレベルに調整します。
-    3.  **終わりを明確にする:** 「あと3問で終わり」「時計の針がここに来たら終わり」と見通しを持たせます。
+    1.  **SOSスキル:** 「手伝って」「休憩」と伝える練習をする。
+    2.  **環境調整:** 「{top_ante}」の難易度を下げたり、量を減らしたりして成功体験を作る。
     """)
-else:
-    st.write("データから傾向が読み取れませんでした。")
 
-# --- 詳細データ ---
-with st.expander("📊 詳細データを見る（円グラフ・生データ）"):
+# --- 詳細データ（円グラフも文字くっきり） ---
+with st.expander("📊 詳細データ（円グラフ・表）"):
     col1, col2 = st.columns(2)
     with col1:
-        # パステルカラーで見やすい円グラフ
         fig_pie = px.pie(
             df_target, names='行動の機能', title='機能の割合', hole=0.4,
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        # 文字を大きく、太く
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label', 
+                              textfont_size=16, textfont_color="black")
+        fig_pie.update_layout(font=dict(size=14, family="Arial"))
         st.plotly_chart(fig_pie, use_container_width=True)
     with col2:
-        st.dataframe(df_target, height=300)
+        st.dataframe(df_target, height=350)
