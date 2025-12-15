@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="FBA 行動分析アプリ (高画質版)",
+    page_title="FBA 行動分析アプリ (修正版)",
     page_icon="🧩",
     layout="wide",
 )
@@ -24,7 +24,7 @@ st.markdown("""
     }
     .legend-box {
         padding: 8px; border-radius: 5px; text-align: center; 
-        color: white; font-weight: bold; font-size: 15px; /* 文字サイズUP */
+        color: white; font-weight: bold; font-size: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -121,7 +121,7 @@ if reinforcement_type == "positive":
         <div class="big-font">➕ 「獲得（ゲット）」タイプ（正の強化）</div>
         <p>行動することで<b>「良いこと」がプラス</b>されています。</p>
         <hr style="border-top: 1px dashed #00aaff;">
-        <ul style="font-size:18px;"> <!-- 文字サイズUP -->
+        <ul style="font-size:18px;">
             <li><b>きっかけ:</b> {top_ante}</li>
             <li><b>目的:</b> {top_func}</li>
         </ul>
@@ -135,7 +135,7 @@ elif reinforcement_type == "negative":
         <div class="big-font">➖ 「回避（逃げ）」タイプ（負の強化）</div>
         <p>行動することで<b>「嫌なこと」がマイナス</b>されています。</p>
         <hr style="border-top: 1px dashed #ff9900;">
-        <ul style="font-size:18px;"> <!-- 文字サイズUP -->
+        <ul style="font-size:18px;">
             <li><b>きっかけ:</b> {top_ante}</li>
             <li><b>目的:</b> {top_func}</li>
         </ul>
@@ -193,6 +193,7 @@ for _, row in df_bc.iterrows():
     values.append(row['value'])
     link_colors.append("rgba(255, 127, 14, 0.4)")
 
+# ★ 修正箇所: nodeの中にtextfontを入れず、update_layoutで全体を設定する ★
 fig_sankey = go.Figure(data=[go.Sankey(
     node=dict(
         pad=20,
@@ -200,17 +201,15 @@ fig_sankey = go.Figure(data=[go.Sankey(
         line=dict(color="black", width=0.5),
         label=labels,
         color=node_colors,
-        # ★★★ 文字くっきり設定 ★★★
-        # サイズを大きく(16px)、太字(Bold)に、色は真っ黒(black)
-        textfont=dict(size=16, color="black", family="Arial Black"),
+        # ここにあった textfont=dict(...) は削除しました（これがエラーの原因）
     ),
     link=dict(source=source, target=target, value=values, color=link_colors)
 )])
 
-# 図全体のレイアウト設定（文字を大きく、余白を調整）
+# ★ ここでフォント設定を一括適用してくっきりさせる ★
 fig_sankey.update_layout(
-    height=600, # 高さを増やして文字の重なりを防ぐ
-    font=dict(size=16, family="Arial"), # 全体の基本フォントサイズUP
+    height=600,
+    font=dict(size=16, color="black", family="Arial Black"), # ここでフォントを指定
     margin=dict(l=20, r=20, t=40, b=40)
 )
 st.plotly_chart(fig_sankey, use_container_width=True)
@@ -219,7 +218,6 @@ st.plotly_chart(fig_sankey, use_container_width=True)
 st.markdown("---")
 st.subheader("💡 対応アプローチ")
 
-# フォントサイズを調整したCSS適用済みメッセージを表示
 if reinforcement_type == "positive":
     st.info(f"""
     ##### 【➕ 獲得タイプ（正の強化）】
@@ -237,7 +235,7 @@ elif reinforcement_type == "negative":
     2.  **環境調整:** 「{top_ante}」の難易度を下げたり、量を減らしたりして成功体験を作る。
     """)
 
-# --- 詳細データ（円グラフも文字くっきり） ---
+# --- 詳細データ ---
 with st.expander("📊 詳細データ（円グラフ・表）"):
     col1, col2 = st.columns(2)
     with col1:
@@ -245,7 +243,7 @@ with st.expander("📊 詳細データ（円グラフ・表）"):
             df_target, names='行動の機能', title='機能の割合', hole=0.4,
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        # 文字を大きく、太く
+        # 円グラフの文字も大きく・黒く設定
         fig_pie.update_traces(textposition='inside', textinfo='percent+label', 
                               textfont_size=16, textfont_color="black")
         fig_pie.update_layout(font=dict(size=14, family="Arial"))
