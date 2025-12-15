@@ -1,163 +1,235 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="FBA（機能的行動評価）分析アプリ",
+    page_title="FBA 行動の理由分析アプリ",
     page_icon="🧩",
     layout="wide",
 )
 
+# --- スタイル定義（見やすさ向上） ---
+st.markdown("""
+<style>
+    .big-font { font-size:20px !important; font-weight:bold; }
+    .hypothesis-box {
+        background-color: #e8f4f8;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #007bff;
+        margin-bottom: 20px;
+    }
+    .strategy-box {
+        background-color: #fff3cd;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #ffc107;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- テンプレートデータ（より具体的で分かりやすい例） ---
+template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,行動の機能
+2025-02-01,かんしゃく,ゲームを終わりにするよう言われた,ゲーム時間が延長された,要求・物品獲得
+2025-02-01,離席,プリント課題が配られた,廊下に出されて課題を免れた,逃避・回避
+2025-02-02,大声を出す,先生が他の子と話していた,先生に「静かに」と注目された,注目要求
+2025-02-03,かんしゃく,お菓子を買ってもらえなかった,お菓子を買ってもらえた,要求・物品獲得
+2025-02-04,離席,難しい算数の問題が出た,先生が手伝ってくれた（課題が減った）,逃避・回避
+2025-02-05,体を揺らす,暇な時間（手持ち無沙汰）,落ち着いている様子,感覚刺激
+"""
+
 # --- アプリタイトルと説明 ---
-st.title("🧩 FBA（機能的行動評価）分析アプリ")
-st.write("ABC記録法のデータをアップロードし、行動の背景にある機能（理由）を可視化・分析します。")
+st.title("🧩 行動の「理由」が見える FBA分析アプリ")
+st.markdown("""
+お子さんや対象者の行動データを分析し、**「なぜその行動をするのか？（機能）」** を可視化します。
+データに基づいた**仮説**と、機能別の**支援のヒント**を提案します。
+""")
 
-with st.expander("🤔 FBA（機能的行動評価）とは？ - 初心者向け解説"):
+with st.expander("📚 初めての方へ：ABC記録と機能について"):
     st.markdown("""
-    ### **1. そもそも「機能的アセスメント」って何？**
-    簡単にいうと、「**どうしてその行動をするのか？**」という行動の理由や目的（＝機能）を調べることです。
-    例えば、授業中に席を立ってしまう子がいるとき、ただ「座りなさい！」と注意するだけでなく、「なぜ席を立ってしまうのか？」の背景を探るのが機能的アセスメントです。
-
-    ### **2. 行動には必ず「目的」がある**
-    人の行動は、多くの場合、何か良い結果を得るため（または嫌なことを避けるため）に行われます。
-    - **注目を得るため**: 席を立つと先生や友達がかまってくれる。
-    - **嫌なことから逃れるため**: 難しい課題から逃れるために席を立つ。
-    - **欲しいものを手に入れるため**: おもちゃが欲しくて泣き叫ぶ。
-    - **感覚的な刺激を得るため**: 揺れるのが楽しくて体を揺らす。
-
-    このように、一見「問題」に見える行動にも、本人なりの目的や理由が隠されています。
-
-    ### **3. どうやって調べるの？ (ABC記録法)**
-    このアプリでは、行動の前後関係を記録する「**ABC記録法**」に基づいたデータを分析します。
-    - **A (Antecedent) = 先行事象**: 行動が起こる**直前の状況**（きっかけ）。
-      - 例: 「難しい課題が出された」「お母さんが電話を始めた」
-    - **B (Behavior) = 行動**: 具体的に**どんな行動**をしたか。
-      - 例: 「席を立った」「大声を出した」
-    - **C (Consequence) = 後続事象**: 行動の**直後に起きたこと**（結果）。
-      - 例: 「先生に注意された」「課題が免除された」
-
-    このA-B-Cの関係を分析することで、行動の「機能」を推測し、より効果的な支援策を考える手助けとなります。
+    行動を理解するには、前後の状況をセットで見る**ABC分析**が有効です。
+    - **A (Antecedent/きっかけ)**: 直前に何があったか？（例: 「勉強しなさい」と言われた）
+    - **B (Behavior/行動)**: 何をしたか？（例: ゲームを投げた）
+    - **C (Consequence/結果)**: 直後にどうなったか？（例: 叱られた、勉強しなくて済んだ）
+    
+    これらを分析すると、行動の**機能（目的）**が見えてきます。
+    - 🔍 **注目要求**: 見てほしい、かまってほしい
+    - 🏃 **逃避・回避**: 嫌なことから逃げたい、やりたくない
+    - 🎁 **要求・物品獲得**: 欲しいものが手に入れたい
+    - 🌀 **感覚刺激**: その行動自体が心地よい、手持ち無沙汰
     """)
 
-st.markdown("---")
-
-# --- データ準備セクション ---
+# --- データ準備 ---
 st.header("1. データの準備")
-
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.subheader("📥 CSVテンプレート")
-    st.write("以下のテンプレートを参考にデータをご準備ください。")
-    template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,行動の機能
-2025-02-01,かんしゃく,遊びをやめるように要求された,注目を得られた,注目要求
-2025-02-01,逃げ出す,課題を与えられた,課題から逃れられた,逃避・回避
-2025-02-02,大声を出す,要求を拒否された,要求が通った,要求・物品獲得
-2025-02-03,叩く,宿題をするように求められた,休憩が与えられた,逃避・回避
-2025-02-04,物を投げる,おもちゃを片付けるよう言われた,注目を得られた,注目要求
-"""
+with st.sidebar:
+    st.header("メニュー")
     st.download_button(
-        label="📄 CSVテンプレートをダウンロード",
+        label="📄 サンプルCSVをダウンロード",
         data=template_csv.encode('utf-8-sig'),
-        file_name="fba_template.csv",
-        mime="text/csv"
+        file_name="fba_template_v2.csv",
+        mime="text/csv",
+        help="これを編集してアップロードしてください"
     )
 
-with col2:
-    st.subheader("📤 CSVファイルのアップロード")
-    st.write("準備したCSVファイルをここにアップロードしてください。")
-    uploaded_file = st.file_uploader("ファイルを選択...", type="csv", label_visibility="collapsed")
+uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type="csv")
 
-# --- ファイルがアップロードされていない場合の表示 ---
 if uploaded_file is None:
-    st.info("☝️ CSVファイルをアップロードすると、ここに分析結果が表示されます。")
+    st.info("👈 サイドバーからサンプルをDLするか、CSVファイルをアップロードしてください。")
     st.stop()
 
-# --- 分析セクション ---
+# --- データ読み込み ---
 try:
     df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-
+    # 空白除去
+    df.columns = df.columns.str.strip()
+    
     required_columns = ["行動", "きっかけ/先行事象", "結果/後続事象", "行動の機能"]
-    missing_columns = [col for col in required_columns if col not in df.columns]
-
-    if missing_columns:
-        st.error(f"❌ ファイルエラー: 必須の列が不足しています。 -> `{', '.join(missing_columns)}`")
+    missing = [c for c in required_columns if c not in df.columns]
+    
+    if missing:
+        st.error(f"❌ 必要な列が見つかりません: {', '.join(missing)}")
         st.stop()
     else:
-        st.success("✅ データが正常に読み込まれました！")
-        with st.expander("読み込んだデータのプレビュー"):
-            st.dataframe(df)
+        st.success(f"✅ {len(df)}件のデータを読み込みました")
 
 except Exception as e:
-    st.error(f"❌ ファイルの読み込み中にエラーが発生しました: {e}")
+    st.error(f"エラー: {e}")
     st.stop()
 
+# --- 分析モード選択 ---
 st.markdown("---")
-st.header("2. 分析結果の可視化")
+st.header("2. 詳細分析")
 
-# --- 頻度と割合の分析 ---
-st.subheader("📊 行動の頻度と機能の割合")
-col1, col2 = st.columns(2)
+# 全体の行動リスト
+unique_behaviors = df['行動'].unique()
+target_behavior = st.selectbox("分析したい「行動」を選んでください", unique_behaviors)
 
-with col1:
-    # 行動の頻度 (棒グラフ)
-    behavior_counts = df["行動"].value_counts().reset_index()
-    behavior_counts.columns = ['行動', '回数']
-    fig_bar = px.bar(
-        behavior_counts,
-        x='行動',
-        y='回数',
-        title='行動の発生頻度',
-        text_auto=True,
-        color='行動',
-        labels={'行動': '行動の種類', '回数': '発生回数'}
-    )
-    fig_bar.update_layout(showlegend=False)
-    st.plotly_chart(fig_bar, use_container_width=True)
+# 選択された行動のみフィルタリング
+df_target = df[df['行動'] == target_behavior]
 
-with col2:
-    # 行動機能の割合 (円グラフ)
-    function_counts = df["行動の機能"].value_counts().reset_index()
-    function_counts.columns = ['機能', '回数']
-    fig_pie = px.pie(
-        function_counts,
-        names='機能',
-        values='回数',
-        title='行動の機能（目的）の割合',
-        hole=0.3, # ドーナツグラフにする
-    )
-    fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-    st.plotly_chart(fig_pie, use_container_width=True)
+if not df_target.empty:
+    st.markdown(f"### 🎯 「{target_behavior}」の分析結果")
+    
+    # --- 自動仮説生成ロジック ---
+    # 最も多い「機能」と「きっかけ」を抽出
+    top_function = df_target['行動の機能'].mode()[0]
+    top_antecedent = df_target['きっかけ/先行事象'].mode()[0]
+    
+    function_count = df_target['行動の機能'].value_counts().max()
+    total_count = len(df_target)
+    confidence = (function_count / total_count) * 100
 
+    # 仮説文の作成
+    st.markdown(f"""
+    <div class="hypothesis-box">
+        <div class="big-font">🤖 AIによる仮説ステートメント</div>
+        <p>データによると、この行動は<b>「{top_antecedent}」</b>という状況で発生しやすく、
+        その主な目的（機能）は<b>「{top_function}」</b>である可能性が高いです。
+        <br><small>（データの {confidence:.0f}% がこの機能を示しています）</small></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # --- 支援のヒント（機能に基づくアドバイス） ---
+    advice_dict = {
+        "注目要求": "**【適切な行動で注目を引けるようにする】**<br>・問題行動は（安全な範囲で）無視し、適切な行動をした瞬間に褒める。<br>・「見て」と口で言えたらすぐに対応する練習をする。",
+        "逃避・回避": "**【課題の調整や休憩の導入】**<br>・「手伝って」や「休憩」を適切に言えるように教える。<br>・課題を簡単にする、または短く区切ってスモールステップにする。",
+        "要求・物品獲得": "**【適切な要求方法を教える】**<br>・泣いても要求は通らないことを一貫して示す。<br>・「貸して」「ちょうだい」と言葉やカードで伝えたらすぐに渡す。",
+        "感覚刺激": "**【代替行動の提案】**<br>・同じような感覚が得られる適切な遊び（トランポリン、スクイーズなど）を提供する。<br>・手持ち無沙汰な時間を減らす。"
+    }
+    
+    # 部分一致でアドバイスを探す
+    advice_text = "機能に応じた専門家のアドバイスを求めてください。"
+    for key, text in advice_dict.items():
+        if key in top_function:
+            advice_text = text
+            break
+            
+    st.markdown(f"""
+    <div class="strategy-box">
+        <div class="big-font">💡 支援のヒント</div>
+        <p>{advice_text}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- グラフ表示 ---
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # きっかけのパレート図
+        antecedent_counts = df_target['きっかけ/先行事象'].value_counts().reset_index()
+        antecedent_counts.columns = ['きっかけ', '回数']
+        fig_ant = px.bar(antecedent_counts, x='回数', y='きっかけ', orientation='h', 
+                         title=f'「{target_behavior}」が起きやすい状況', text_auto=True)
+        fig_ant.update_layout(yaxis={'categoryorder':'total ascending'})
+        st.plotly_chart(fig_ant, use_container_width=True)
+        
+    with col2:
+        # 機能の円グラフ
+        function_counts = df_target['行動の機能'].value_counts().reset_index()
+        function_counts.columns = ['機能', '回数']
+        fig_pie = px.pie(function_counts, names='機能', values='回数', 
+                         title=f'「{target_behavior}」の機能（目的）', hole=0.4)
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+# --- 全体俯瞰（サンキー図） ---
 st.markdown("---")
+st.header("3. 全データの流れを見る（サンキー図）")
+st.write("「きっかけ ➡ 行動 ➡ 結果」の流れを可視化します。太い線ほど頻度が高いパターンです。")
 
-# --- 関連性の分析 (ヒートマップ) ---
-st.subheader("🔍 きっかけ・結果と行動の関連性")
-col3, col4 = st.columns(2)
+# サンキー図のデータ作成ロジック
+# データフレームを集計
+sankey_df = df.groupby(['きっかけ/先行事象', '行動', '結果/後続事象']).size().reset_index(name='value')
 
-with col3:
-    # きっかけごとの頻度 (ヒートマップ)
-    antecedent_counts = df.pivot_table(index="きっかけ/先行事象", columns="行動", aggfunc="size", fill_value=0)
-    fig_heat_ante = px.imshow(
-        antecedent_counts,
-        text_auto=True,
-        aspect="auto",
-        color_continuous_scale='Blues',
-        title='【きっかけ → 行動】の関連性ヒートマップ',
-        labels=dict(x="行動", y="きっかけ/先行事象", color="回数")
+# ノード（要素）のリスト作成
+all_nodes = list(pd.concat([
+    sankey_df['きっかけ/先行事象'], 
+    sankey_df['行動'], 
+    sankey_df['結果/後続事象']
+]).unique())
+
+# ノードをインデックスに変換するマップ
+node_map = {node: i for i, node in enumerate(all_nodes)}
+
+# リンク（線）の作成
+source = []
+target = []
+value = []
+
+# A -> B のリンク
+for _, row in sankey_df.iterrows():
+    source.append(node_map[row['きっかけ/先行事象']])
+    target.append(node_map[row['行動']])
+    value.append(row['value'])
+
+# B -> C のリンク
+for _, row in sankey_df.iterrows():
+    source.append(node_map[row['行動']])
+    target.append(node_map[row['結果/後続事象']])
+    value.append(row['value'])
+
+# サンキー図の描画
+fig_sankey = go.Figure(data=[go.Sankey(
+    node=dict(
+        pad=15,
+        thickness=20,
+        line=dict(color="black", width=0.5),
+        label=all_nodes,
+        color="blue"
+    ),
+    link=dict(
+        source=source,
+        target=target,
+        value=value,
+        color='rgba(0, 0, 255, 0.2)' # 薄い青
     )
-    st.plotly_chart(fig_heat_ante, use_container_width=True)
+)])
 
-with col4:
-    # 結果ごとの頻度 (ヒートマップ)
-    consequence_counts = df.pivot_table(index="結果/後続事象", columns="行動", aggfunc="size", fill_value=0)
-    fig_heat_cons = px.imshow(
-        consequence_counts,
-        text_auto=True,
-        aspect="auto",
-        color_continuous_scale='Oranges',
-        title='【行動 → 結果】の関連性ヒートマップ',
-        labels=dict(x="行動", y="結果/後続事象", color="回数")
-    )
-    st.plotly_chart(fig_heat_cons, use_container_width=True)
+fig_sankey.update_layout(title_text="行動の連鎖フロー (A ➡ B ➡ C)", font_size=12, height=500)
+st.plotly_chart(fig_sankey, use_container_width=True)
+
+# --- データテーブル ---
+with st.expander("📋 生データを確認する"):
+    st.dataframe(df)
