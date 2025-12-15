@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 
 # --- ページ設定 ---
 st.set_page_config(
-    page_title="FBA 行動の理由分析アプリ",
-    page_icon="🧩",
+    page_title="FBA 行動分析アプリ (Visual Enhanced)",
+    page_icon="🎨",
     layout="wide",
 )
 
@@ -15,22 +15,21 @@ st.markdown("""
 <style>
     .big-font { font-size:20px !important; font-weight:bold; }
     .hypothesis-box {
-        background-color: #e8f4f8;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #007bff;
-        margin-bottom: 20px;
+        background-color: #e8f4f8; padding: 20px; border-radius: 10px;
+        border-left: 5px solid #007bff; margin-bottom: 20px;
     }
     .strategy-box {
-        background-color: #fff3cd;
-        padding: 20px;
-        border-radius: 10px;
+        background-color: #fff3cd; padding: 20px; border-radius: 10px;
         border-left: 5px solid #ffc107;
+    }
+    /* 凡例のようなスタイル */
+    .legend-box {
+        padding: 10px; border-radius: 5px; text-align: center; color: white; font-weight: bold; margin: 5px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- テンプレートデータ（より具体的で分かりやすい例） ---
+# --- サンプルデータ ---
 template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,行動の機能
 2025-02-01,かんしゃく,ゲームを終わりにするよう言われた,ゲーム時間が延長された,要求・物品獲得
 2025-02-01,離席,プリント課題が配られた,廊下に出されて課題を免れた,逃避・回避
@@ -38,198 +37,219 @@ template_csv = """日付,行動,きっかけ/先行事象,結果/後続事象,�
 2025-02-03,かんしゃく,お菓子を買ってもらえなかった,お菓子を買ってもらえた,要求・物品獲得
 2025-02-04,離席,難しい算数の問題が出た,先生が手伝ってくれた（課題が減った）,逃避・回避
 2025-02-05,体を揺らす,暇な時間（手持ち無沙汰）,落ち着いている様子,感覚刺激
+2025-02-06,かんしゃく,ゲームを終わりにするよう言われた,ゲーム時間が延長された,要求・物品獲得
+2025-02-06,離席,プリント課題が配られた,先生が横について教えた,注目要求
 """
 
-# --- アプリタイトルと説明 ---
-st.title("🧩 行動の「理由」が見える FBA分析アプリ")
-st.markdown("""
-お子さんや対象者の行動データを分析し、**「なぜその行動をするのか？（機能）」** を可視化します。
-データに基づいた**仮説**と、機能別の**支援のヒント**を提案します。
-""")
+# --- メイン画面 ---
+st.title("🎨 行動の「理由」が見える FBA分析アプリ")
+st.write("行動の前後関係（A-B-C）を色分けして可視化し、直感的にパターンを把握します。")
 
-with st.expander("📚 初めての方へ：ABC記録と機能について"):
-    st.markdown("""
-    行動を理解するには、前後の状況をセットで見る**ABC分析**が有効です。
-    - **A (Antecedent/きっかけ)**: 直前に何があったか？（例: 「勉強しなさい」と言われた）
-    - **B (Behavior/行動)**: 何をしたか？（例: ゲームを投げた）
-    - **C (Consequence/結果)**: 直後にどうなったか？（例: 叱られた、勉強しなくて済んだ）
-    
-    これらを分析すると、行動の**機能（目的）**が見えてきます。
-    - 🔍 **注目要求**: 見てほしい、かまってほしい
-    - 🏃 **逃避・回避**: 嫌なことから逃げたい、やりたくない
-    - 🎁 **要求・物品獲得**: 欲しいものが手に入れたい
-    - 🌀 **感覚刺激**: その行動自体が心地よい、手持ち無沙汰
-    """)
-
-# --- データ準備 ---
-st.header("1. データの準備")
+# --- サイドバー ---
 with st.sidebar:
-    st.header("メニュー")
+    st.header("📂 データ入力")
     st.download_button(
-        label="📄 サンプルCSVをダウンロード",
+        label="📄 CSVテンプレートをDL",
         data=template_csv.encode('utf-8-sig'),
-        file_name="fba_template_v2.csv",
-        mime="text/csv",
-        help="これを編集してアップロードしてください"
+        file_name="fba_template_visual.csv",
+        mime="text/csv"
     )
-
-uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type="csv")
+    uploaded_file = st.file_uploader("CSVをアップロード", type="csv")
 
 if uploaded_file is None:
-    st.info("👈 サイドバーからサンプルをDLするか、CSVファイルをアップロードしてください。")
+    st.info("👈 サイドバーからCSVファイルをアップロードしてください（サンプルで動作確認できます）。")
     st.stop()
 
 # --- データ読み込み ---
 try:
     df = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-    # 空白除去
     df.columns = df.columns.str.strip()
-    
-    required_columns = ["行動", "きっかけ/先行事象", "結果/後続事象", "行動の機能"]
-    missing = [c for c in required_columns if c not in df.columns]
-    
-    if missing:
-        st.error(f"❌ 必要な列が見つかりません: {', '.join(missing)}")
+    # 必須列チェック
+    req_cols = ["行動", "きっかけ/先行事象", "結果/後続事象", "行動の機能"]
+    if not all(col in df.columns for col in req_cols):
+        st.error(f"必須列が不足しています: {req_cols}")
         st.stop()
-    else:
-        st.success(f"✅ {len(df)}件のデータを読み込みました")
-
 except Exception as e:
     st.error(f"エラー: {e}")
     st.stop()
 
-# --- 分析モード選択 ---
+# --- 分析対象の選択 ---
 st.markdown("---")
-st.header("2. 詳細分析")
+col_sel1, col_sel2 = st.columns([1, 3])
+with col_sel1:
+    st.subheader("🔍 分析対象")
+    target_behavior = st.selectbox("詳しく見る行動を選択", df['行動'].unique())
 
-# 全体の行動リスト
-unique_behaviors = df['行動'].unique()
-target_behavior = st.selectbox("分析したい「行動」を選んでください", unique_behaviors)
+df_target = df[df['行動'] == target_behavior].copy()
 
-# 選択された行動のみフィルタリング
-df_target = df[df['行動'] == target_behavior]
+if df_target.empty:
+    st.stop()
 
-if not df_target.empty:
-    st.markdown(f"### 🎯 「{target_behavior}」の分析結果")
+# --- 自動分析レポート（ロジックは前回同様、表示を微調整） ---
+with col_sel2:
+    st.subheader("📝 分析サマリー")
+    top_func = df_target['行動の機能'].mode()[0] if not df_target.empty else "不明"
+    top_ante = df_target['きっかけ/先行事象'].mode()[0] if not df_target.empty else "不明"
     
-    # --- 自動仮説生成ロジック ---
-    # 最も多い「機能」と「きっかけ」を抽出
-    top_function = df_target['行動の機能'].mode()[0]
-    top_antecedent = df_target['きっかけ/先行事象'].mode()[0]
-    
-    function_count = df_target['行動の機能'].value_counts().max()
-    total_count = len(df_target)
-    confidence = (function_count / total_count) * 100
-
-    # 仮説文の作成
     st.markdown(f"""
     <div class="hypothesis-box">
-        <div class="big-font">🤖 AIによる仮説ステートメント</div>
-        <p>データによると、この行動は<b>「{top_antecedent}」</b>という状況で発生しやすく、
-        その主な目的（機能）は<b>「{top_function}」</b>である可能性が高いです。
-        <br><small>（データの {confidence:.0f}% がこの機能を示しています）</small></p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # --- 支援のヒント（機能に基づくアドバイス） ---
-    advice_dict = {
-        "注目要求": "**【適切な行動で注目を引けるようにする】**<br>・問題行動は（安全な範囲で）無視し、適切な行動をした瞬間に褒める。<br>・「見て」と口で言えたらすぐに対応する練習をする。",
-        "逃避・回避": "**【課題の調整や休憩の導入】**<br>・「手伝って」や「休憩」を適切に言えるように教える。<br>・課題を簡単にする、または短く区切ってスモールステップにする。",
-        "要求・物品獲得": "**【適切な要求方法を教える】**<br>・泣いても要求は通らないことを一貫して示す。<br>・「貸して」「ちょうだい」と言葉やカードで伝えたらすぐに渡す。",
-        "感覚刺激": "**【代替行動の提案】**<br>・同じような感覚が得られる適切な遊び（トランポリン、スクイーズなど）を提供する。<br>・手持ち無沙汰な時間を減らす。"
-    }
-    
-    # 部分一致でアドバイスを探す
-    advice_text = "機能に応じた専門家のアドバイスを求めてください。"
-    for key, text in advice_dict.items():
-        if key in top_function:
-            advice_text = text
-            break
-            
-    st.markdown(f"""
-    <div class="strategy-box">
-        <div class="big-font">💡 支援のヒント</div>
-        <p>{advice_text}</p>
+        <b>💡 AI仮説:</b> <br>
+        この行動は、<span style="color:#007bff; font-weight:bold;">「{top_ante}」</span> という状況下で、
+        <span style="color:#28a745; font-weight:bold;">「{top_func}」</span> を達成するために行われている傾向があります。
     </div>
     """, unsafe_allow_html=True)
 
-    # --- グラフ表示 ---
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # きっかけのパレート図
-        antecedent_counts = df_target['きっかけ/先行事象'].value_counts().reset_index()
-        antecedent_counts.columns = ['きっかけ', '回数']
-        fig_ant = px.bar(antecedent_counts, x='回数', y='きっかけ', orientation='h', 
-                         title=f'「{target_behavior}」が起きやすい状況', text_auto=True)
-        fig_ant.update_layout(yaxis={'categoryorder':'total ascending'})
-        st.plotly_chart(fig_ant, use_container_width=True)
-        
-    with col2:
-        # 機能の円グラフ
-        function_counts = df_target['行動の機能'].value_counts().reset_index()
-        function_counts.columns = ['機能', '回数']
-        fig_pie = px.pie(function_counts, names='機能', values='回数', 
-                         title=f'「{target_behavior}」の機能（目的）', hole=0.4)
-        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(fig_pie, use_container_width=True)
-
-# --- 全体俯瞰（サンキー図） ---
+# --- 3. ビジュアルサンキー図（ここがメインの改良） ---
 st.markdown("---")
-st.header("3. 全データの流れを見る（サンキー図）")
-st.write("「きっかけ ➡ 行動 ➡ 結果」の流れを可視化します。太い線ほど頻度が高いパターンです。")
+st.header("🌊 行動連鎖のフロー図 (A ➡ B ➡ C)")
 
-# サンキー図のデータ作成ロジック
-# データフレームを集計
-sankey_df = df.groupby(['きっかけ/先行事象', '行動', '結果/後続事象']).size().reset_index(name='value')
+st.markdown("""
+<div style="display:flex; gap:10px; margin-bottom:10px;">
+    <div class="legend-box" style="background-color:#1f77b4; width:30%;">A: きっかけ (Blue)</div>
+    <div class="legend-box" style="background-color:#ff7f0e; width:30%;">B: 行動 (Orange)</div>
+    <div class="legend-box" style="background-color:#2ca02c; width:30%;">C: 結果 (Green)</div>
+</div>
+""", unsafe_allow_html=True)
 
-# ノード（要素）のリスト作成
-all_nodes = list(pd.concat([
-    sankey_df['きっかけ/先行事象'], 
-    sankey_df['行動'], 
-    sankey_df['結果/後続事象']
-]).unique())
+# サンキー図用データ処理
+# 1. ノード（登場する単語）をリスト化する際、カテゴリ（A, B, C）を区別して管理する
+# これにより、同じ単語がAとCにあっても別のノードとして扱える（色が混ざらない）
 
-# ノードをインデックスに変換するマップ
-node_map = {node: i for i, node in enumerate(all_nodes)}
+# データ集計
+sankey_counts = df_target.groupby(['きっかけ/先行事象', '行動', '結果/後続事象']).size().reset_index(name='value')
+
+# ノードリストの作成
+# ラベルにスペースなどを追加して、Plotly上で別のノードとして認識させるハック技を使わず、
+# 順番にインデックスを管理します。
+
+nodes = []
+node_colors = []
+labels = []
+
+# Aのノード登録
+ante_list = sankey_counts['きっかけ/先行事象'].unique().tolist()
+ante_map = {}
+for item in ante_list:
+    ante_map[item] = len(nodes)
+    nodes.append(item)
+    labels.append(item)
+    node_colors.append("#1f77b4") # Blue
+
+# Bのノード登録
+beh_list = sankey_counts['行動'].unique().tolist()
+beh_map = {}
+for item in beh_list:
+    beh_map[item] = len(nodes)
+    nodes.append(item)
+    labels.append(item)
+    node_colors.append("#ff7f0e") # Orange/Red
+
+# Cのノード登録
+cons_list = sankey_counts['結果/後続事象'].unique().tolist()
+cons_map = {}
+for item in cons_list:
+    cons_map[item] = len(nodes)
+    nodes.append(item)
+    labels.append(item)
+    node_colors.append("#2ca02c") # Green
 
 # リンク（線）の作成
 source = []
 target = []
-value = []
+values = []
+link_colors = []
 
 # A -> B のリンク
-for _, row in sankey_df.iterrows():
-    source.append(node_map[row['きっかけ/先行事象']])
-    target.append(node_map[row['行動']])
-    value.append(row['value'])
+# Aごとのグループを作成してリンクをつなぐ
+df_ab = sankey_counts.groupby(['きっかけ/先行事象', '行動'])['value'].sum().reset_index()
+for _, row in df_ab.iterrows():
+    source.append(ante_map[row['きっかけ/先行事象']])
+    target.append(beh_map[row['行動']])
+    values.append(row['value'])
+    link_colors.append("rgba(31, 119, 180, 0.3)") # Blueの半透明
 
 # B -> C のリンク
-for _, row in sankey_df.iterrows():
-    source.append(node_map[row['行動']])
-    target.append(node_map[row['結果/後続事象']])
-    value.append(row['value'])
+df_bc = sankey_counts.groupby(['行動', '結果/後続事象'])['value'].sum().reset_index()
+for _, row in df_bc.iterrows():
+    source.append(beh_map[row['行動']])
+    target.append(cons_map[row['結果/後続事象']])
+    values.append(row['value'])
+    link_colors.append("rgba(255, 127, 14, 0.3)") # Orangeの半透明
 
-# サンキー図の描画
+# サンキー図描画
 fig_sankey = go.Figure(data=[go.Sankey(
     node=dict(
-        pad=15,
+        pad=20,
         thickness=20,
         line=dict(color="black", width=0.5),
-        label=all_nodes,
-        color="blue"
+        label=labels,
+        color=node_colors, # 指定した色を適用
     ),
     link=dict(
         source=source,
         target=target,
-        value=value,
-        color='rgba(0, 0, 255, 0.2)' # 薄い青
+        value=values,
+        color=link_colors # 指定した色を適用
     )
 )])
 
-fig_sankey.update_layout(title_text="行動の連鎖フロー (A ➡ B ➡ C)", font_size=12, height=500)
+fig_sankey.update_layout(
+    height=500,
+    font_size=14,
+    margin=dict(l=10, r=10, t=30, b=30)
+)
 st.plotly_chart(fig_sankey, use_container_width=True)
 
-# --- データテーブル ---
-with st.expander("📋 生データを確認する"):
+# --- その他の詳細グラフ ---
+st.markdown("---")
+st.subheader("📊 詳細データ分析")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    # 機能の円グラフ（パステルカラーで見やすく）
+    func_counts = df_target['行動の機能'].value_counts().reset_index()
+    func_counts.columns = ['機能', '回数']
+    fig_pie = px.pie(
+        func_counts, names='機能', values='回数',
+        title=f'「{target_behavior}」の目的割合',
+        hole=0.4,
+        color_discrete_sequence=px.colors.qualitative.Pastel # パステルカラー
+    )
+    fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+with col2:
+    # きっかけの棒グラフ（単色で見やすく）
+    ante_counts = df_target['きっかけ/先行事象'].value_counts().reset_index().head(5)
+    ante_counts.columns = ['きっかけ', '回数']
+    fig_bar = px.bar(
+        ante_counts, y='きっかけ', x='回数', orientation='h',
+        title='発生しやすい状況 TOP5',
+        text_auto=True,
+        color_discrete_sequence=['#1f77b4'] # 青系で統一
+    )
+    fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+# --- 支援アドバイス表示（前回好評だった機能を維持） ---
+st.markdown("---")
+st.subheader("💡 機能に基づいた対応ヒント")
+
+# 機能特定
+main_function = df_target['行動の機能'].mode()[0] if not df_target.empty else ""
+
+# アドバイス辞書
+tips = {
+    "要求・物品獲得": ("🎁 「ちょうだい」を教えるチャンスです", "行動がおさまってから渡すのではなく、「ちょうだい」とジェスチャーや言葉で伝えた瞬間に渡す練習をしましょう。"),
+    "注目要求": ("👀 適切な行動に注目しましょう", "問題行動中は安全を確保しつつ反応を控え、静かにしている時や適切な行動をしている時にたくさん褒めましょう。"),
+    "逃避・回避": ("🏃 課題の難易度を見直しましょう", "「手伝って」や「休憩」を言えるように教えるか、課題の量を減らして『できた！』という経験を増やしましょう。"),
+    "感覚刺激": ("🌀 代わりの遊びを提供しましょう", "その行動と同じような感覚が得られる、より適切な遊び（スクイーズを握る、トランポリンなど）を用意しましょう。")
+}
+
+tip_title, tip_content = tips.get(main_function, ("🤔 専門家にご相談ください", "複数の機能が混ざっている可能性があります。"))
+
+st.info(f"**【{main_function}】へのアプローチ:**\n\n**{tip_title}**\n\n{tip_content}")
+
+with st.expander("全データリストを表示"):
     st.dataframe(df)
